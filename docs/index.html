@@ -7,12 +7,12 @@
         <script
             type="module"
             crossorigin=""
-            src="./assets/main-BMQsjaxU.js"
+            src="./assets/main-CAdFJqEV.js"
         ></script>
         <link
             rel="stylesheet"
             crossorigin=""
-            href="./assets/main-DtFGuQct.css"
+            href="./assets/main-DfBmRt1n.css"
         />
     </head>
     <body>
@@ -20,45 +20,91 @@
             <div class="container">
                 <form class="temp__wrap">
                     <h1 class="temp__title">Рандомайзер для шаблонов</h1>
-                    <div class="temp__inputs">
-                        <textarea
-                            class="input"
-                            placeholder="Введите название шаблонов, указанных вами в файле в фигурных скобках через Enter. Пример: temp1"
-                            rows="5"
-                            id="templates"
-                        ></textarea>
-                        <textarea
-                            class="input"
-                            placeholder="Введите текст, который требуется вставить в шаблоны через Enter"
-                            rows="5"
-                            id="items"
-                        ></textarea>
-                        <input
-                            type="number"
-                            placeholder="Число копий шаблона"
-                            class="input"
-                            min="0"
-                            max="200"
-                            id="num"
-                        />
-                        <input
-                            type="file"
-                            hidden=""
-                            id="file"
-                            class="input"
-                            accept=".docx"
-                        />
-                        <label for="file" id="fileLabel" class="input"
-                            >Файл шаблона</label
-                        >
+                    <div class="temp__columns active">
+                        <div>
+                            <div class="temp__inputs">
+                                <textarea
+                                    class="input"
+                                    placeholder="Введите название шаблонов, указанных вами в файле в фигурных скобках через Enter. Пример: temp1"
+                                    rows="5"
+                                    id="templates"
+                                ></textarea>
+                                <textarea
+                                    class="input"
+                                    placeholder="Введите текст, который требуется вставить в шаблоны через Enter"
+                                    rows="5"
+                                    id="items"
+                                ></textarea>
+                                <input
+                                    type="number"
+                                    placeholder="Число копий шаблона"
+                                    class="input"
+                                    min="0"
+                                    max="200"
+                                    id="num"
+                                />
+                                <input
+                                    type="file"
+                                    hidden=""
+                                    id="file"
+                                    class="input"
+                                    accept=".docx"
+                                />
+                                <label for="file" id="fileLabel" class="input"
+                                    >Файл шаблона</label
+                                >
+                                <select id="type" class="input input_select">
+                                    <option
+                                        value=""
+                                        disabled="disabled"
+                                        selected="selected"
+                                    >
+                                        Выберите тип заполнения
+                                    </option>
+                                    <option value="default">Стандартный</option>
+                                    <option value="first">
+                                        Шаблон с подписью предмета (subject),
+                                        специальности (speciality), семестра
+                                        (semester)
+                                    </option>
+                                </select>
+                            </div>
+                            <button
+                                type="submit"
+                                id="submit"
+                                class="temp__submit input"
+                            >
+                                Сгенерировать
+                            </button>
+                        </div>
+                        <div class="temp__additional-section">
+                            <h2 class="temp__additional-title">
+                                Текущий тип заполнения:
+                            </h2>
+                            <p class="temp__notify">
+                                Используется стандартный тип
+                            </p>
+                            <div class="temp__type" data-type="first">
+                                <div class="temp__inputs">
+                                    <input
+                                        id="subject"
+                                        placeholder="Предмет"
+                                        class="input"
+                                    />
+                                    <input
+                                        id="speciality"
+                                        placeholder="Специальность"
+                                        class="input"
+                                    />
+                                    <input
+                                        id="semester"
+                                        placeholder="Семестр"
+                                        class="input"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <button
-                        type="submit"
-                        id="submit"
-                        class="temp__submit input"
-                    >
-                        Сгенерировать
-                    </button>
                     <div class="temp__loading hidden">
                         <div class="loader"></div>
                     </div>
@@ -91,9 +137,21 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <script>
             $(() => {
-                ($(".temp__wrap").on("submit", (e) => {
-                    e.preventDefault();
+                ($("#type").on("change", function (e) {
+                    const t = $(e.currentTarget).val();
+                    "default" !== t
+                        ? ($(".temp__notify").slideUp(300),
+                          $(".temp__type").not(`[data-type=${t}]`).slideUp(300),
+                          $(".temp__type").removeClass("active"),
+                          $(`.temp__type[data-type=${t}]`).slideDown(300),
+                          $(`.temp__type[data-type=${t}]`).addClass("active"))
+                        : ($(".temp__type").slideUp(300),
+                          $(".temp__type").removeClass("active"),
+                          $(".temp__notify").slideDown(300));
                 }),
+                    $(".temp__wrap").on("submit", (e) => {
+                        e.preventDefault();
+                    }),
                     $("#file").on("change", (e) => {
                         const t = e.currentTarget.files;
                         t.length
@@ -102,7 +160,7 @@
                     }),
                     $("#submit").on("click", () => {
                         let e = !0,
-                            t = {};
+                            t = { additional: [] };
                         if (
                             (document
                                 .querySelectorAll(
@@ -119,92 +177,116 @@
                                                 "Введено некорректное кол-во копий. Диапазон от 0 до 200",
                                             ),
                                             (e = !1)),
-                                        (t[n.id] = n.value));
+                                        n.matches(
+                                            ".temp__additional-section .input",
+                                        )
+                                            ? n.matches(
+                                                  ".temp__type.active .input",
+                                              ) &&
+                                              t.additional.push({
+                                                  [n.id]: n.value,
+                                              })
+                                            : (t[n.id] = n.value));
                                 }),
                             e)
                         ) {
                             $(".temp__loading").removeClass("hidden");
                             let e = t.items.split("\n"),
                                 n = [...e],
-                                l = t.templates.split("\n"),
-                                a = +$("#num").val(),
-                                r = [];
-                            for (let t = 0; t < a; t++) {
-                                let t = {};
-                                (l.forEach((l) => {
-                                    const a =
-                                        ((r = 0),
-                                        (i = n.length - 1),
+                                a = t.templates.split("\n"),
+                                l = +$("#num").val(),
+                                i = t.additional,
+                                o = [];
+                            for (let t = 0; t < l; t++) {
+                                let l = {};
+                                a.forEach((a) => {
+                                    const i =
+                                        ((o = 0),
+                                        (s = n.length - 1),
                                         Math.floor(
-                                            Math.random() * (i - r + 1),
-                                        ) + r);
-                                    var r, i;
-                                    ((t[l] = n[a]),
-                                        n.splice(a, 1),
+                                            Math.random() * (s - o + 1),
+                                        ) + o);
+                                    var o, s;
+                                    ((l[a] = n[i]),
+                                        (l.number = t + 1),
+                                        n.splice(i, 1),
                                         0 === n.length && (n = [...e]));
+                                });
+                                let s = { ...l };
+                                (i.forEach((e) => {
+                                    s = { ...s, ...e };
                                 }),
-                                    r.push(t));
+                                    o.push(s));
                             }
-                            const i = new JSZip();
-                            new Promise((e, t) => {
-                                r.forEach((t, n) => {
-                                    const l = document.getElementById("file");
-                                    ((window.generate = function () {
-                                        const a = new FileReader();
-                                        (a.readAsBinaryString(l.files.item(0)),
-                                            (a.onerror = function (e) {
-                                                (console.log(
-                                                    "error reading file",
-                                                    e,
-                                                ),
-                                                    alert(
-                                                        "error reading file" +
-                                                            e,
-                                                    ));
-                                            }),
-                                            (a.onload = function (l) {
-                                                const a = l.target.result,
-                                                    o = new PizZip(a),
-                                                    s =
-                                                        new window.docxtemplater(
-                                                            o,
-                                                            {
-                                                                paragraphLoop:
-                                                                    !0,
-                                                                linebreaks: !0,
-                                                            },
-                                                        );
-                                                s.render(t);
-                                                s.toBlob();
-                                                (i.file(
-                                                    `file${n + 1}.docx`,
-                                                    s.toBlob(),
-                                                ),
-                                                    n === r.length - 1 && e());
-                                            }));
-                                    }),
-                                        generate());
-                                });
-                            })
-                                .catch((e) => {
-                                    (alert(
-                                        "Произошла ошибка при генерации архива",
-                                    ),
-                                        $(".temp__loading").addClass("hidden"));
-                                })
-                                .then(() => {
-                                    i.generateAsync({ type: "blob" }).then(
-                                        (e) => {
-                                            ($(".temp__success-link").attr(
-                                                "href",
-                                                URL.createObjectURL(e),
+                            !(function (e) {
+                                const t = new JSZip();
+                                new Promise((n, a) => {
+                                    e.forEach((a, l) => {
+                                        const i =
+                                            document.getElementById("file");
+                                        ((window.generate = function () {
+                                            const o = new FileReader();
+                                            (o.readAsBinaryString(
+                                                i.files.item(0),
                                             ),
-                                                $(".temp__success").removeClass(
-                                                    "hidden",
-                                                ));
-                                        },
-                                    );
-                                });
+                                                (o.onerror = function (e) {
+                                                    (console.log(
+                                                        "error reading file",
+                                                        e,
+                                                    ),
+                                                        alert(
+                                                            "error reading file" +
+                                                                e,
+                                                        ));
+                                                }),
+                                                (o.onload = function (i) {
+                                                    const o = i.target.result,
+                                                        s = new PizZip(o),
+                                                        r =
+                                                            new window.docxtemplater(
+                                                                s,
+                                                                {
+                                                                    paragraphLoop:
+                                                                        !0,
+                                                                    linebreaks:
+                                                                        !0,
+                                                                },
+                                                            );
+                                                    (r.render(a),
+                                                        r.toBlob(),
+                                                        t.file(
+                                                            `file${l + 1}.docx`,
+                                                            r.toBlob(),
+                                                        ),
+                                                        l === e.length - 1 &&
+                                                            n());
+                                                }));
+                                        }),
+                                            generate());
+                                    });
+                                })
+                                    .catch((e) => {
+                                        (alert(
+                                            "Произошла ошибка при генерации архива",
+                                        ),
+                                            $(".temp__loading").addClass(
+                                                "hidden",
+                                            ));
+                                    })
+                                    .then(() => {
+                                        t.generateAsync({ type: "blob" }).then(
+                                            (e) => {
+                                                ($(".temp__success-link").attr(
+                                                    "href",
+                                                    URL.createObjectURL(e),
+                                                ),
+                                                    $(
+                                                        ".temp__success",
+                                                    ).removeClass("hidden"));
+                                            },
+                                        );
+                                    });
+                            })(o);
                         }
                     }),
                     $(".temp__skip").on("click", () => {
